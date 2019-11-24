@@ -64,7 +64,7 @@ async function checkTokenValidity(token) {
         AccessToken.create({
             token: token
         });
-        console.log("Inserting: " + data.accessToken);
+        console.log("Inserting: " + token);
         return true;
     } else {
         return true;
