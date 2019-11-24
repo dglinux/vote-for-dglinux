@@ -17,23 +17,24 @@
             <h4>魔法代码 <small>没事儿的话最好不要改这个</small></h4>
             <input id="magic">
         </div>
-        <div class="">
+        <div id="new-poll">
             <h2>创建新投票</h2>
             <div>
                 <input type="checkbox" id="multiselect"> <label for="multiselect">是多选吗？</label>
             </div>
             <div><input class="new-poll-name" placeholder="标题" id="title"></div>
-            <div><input class="new-poll-halfsie" placeholder="作者" id="author"><input class="new-poll-halfsie" placeholder="非常简单的介绍" id="description"></div>
+            <div><input class="new-poll-halfsie" placeholder="发起人" id="author"><input class="new-poll-halfsie" placeholder="非常简单的介绍" id="description"></div>
+            <div><input type="date" placeholder="死线" id="expirationDate"></div>
 
             <h4 style="margin-top: 2rem">投票项</h4>
             <div class="new-poll-options-list">
                 <div class="selectable poll-option">
                     <div class="poll-bar"></div>
-                    <input class="new-poll-option" placeholder="选项一"><small style="display: none">0%</small>
+                    <input class="new-poll-option" placeholder="选项 1"><small style="display: none">0%</small>
                 </div>
             </div>
 
-            <div class="submit">
+            <div class="submit" id="submit">
                 提交
             </div>
         </div>
@@ -44,5 +45,11 @@
     </div>
     <script src="js/poll.js"></script>
     <script src="js/create.js"></script>
+    <script>
+        getVotingToken();
+        performPermissionCheck();
+        fillUpPollBars();
+        bindEvents();
+    </script>
 </body>
 </html>

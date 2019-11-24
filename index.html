@@ -18,6 +18,9 @@
             <input id="magic">
         </div>
         <div class="ongoing-polls">
+            <div class="failed">
+                <h3>由于某些原因，获取投票失败了。</h3>
+            </div>
             <div class="poll">
                 <h4>Q: 下周去吃东西？</h4>
                 <div><small>为啥不去呢？</small></div>
@@ -47,5 +50,10 @@
         </div>
     </div>
     <script src="js/poll.js"></script>
+    <script>
+        getVotingToken();
+        performPermissionCheck();
+        getOngoingPolls().then(renderOngoingPolls);
+    </script>
 </body>
 </html>
