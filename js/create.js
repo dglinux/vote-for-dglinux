@@ -30,6 +30,7 @@ function optionEventListener(e) {
 }
 
 function submit() {
+    console.log("SUBMITTING");
     const data = {
         title: document.querySelector("#title").value,
         author: document.querySelector("#author").value,

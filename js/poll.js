@@ -1,5 +1,5 @@
 // === DEFAULT CONFIGURATIONS === //
-const host = "10.61.144.243";
+const host = "127.0.0.1";
 const port = 12345;
 let accessToken = "";
 
@@ -147,9 +147,7 @@ function voteFor(pollID, voteID) {
             "voteID": voteID
         })
     }).then((res) => {
-        res.json().then((json) => {
-            console.log(json);
-        });
+        res.json().then((json) => {});
     });
     
     let total = 0;
@@ -196,7 +194,6 @@ function voteFor(pollID, voteID) {
 function renderOngoingPolls() {
     const polls = window.polls;
     let pollsHTML = "";
-    console.log(polls);
     // === CONSTRUCT POLLS === //
     for (let i = 0; i < polls.length; i++) {
         const content = polls[i].content;
