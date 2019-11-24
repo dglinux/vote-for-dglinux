@@ -17,7 +17,12 @@ function fillUpPollBars() {
         let p = Math.sqrt((100 - percentage) / 100.0);
         charCode = charCode - Math.round((p * (charCode - biggest)));
         charCode = charCode.toString(16);
-        bar.style.backgroundColor = "#00" + charCode + charCode + "0055";
+        if (!option.classList.contains("expired")) {
+            bar.style.backgroundColor = "#00" + charCode + charCode + "0055";
+        } else {
+            bar.style.backgroundColor = "#" + charCode + charCode + "660355"; 
+        }
+        
     }
 }
 
@@ -55,6 +60,15 @@ function getVotingToken() {
     });
 }
 
+function renderError() {
+    const polls = document.querySelector(".ongoing-polls");
+    if (polls) { polls.style.display = "none"; }
+    const createPollPanel = document.querySelector("#new-poll");
+    if (createPollPanel) { createPollPanel.style.display = "none"; }
+    const rejection = document.querySelector(".rejection");
+    rejection.style.display = "block";
+}
+
 function performPermissionCheck() {
     fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
         method: "post",
@@ -65,14 +79,13 @@ function performPermissionCheck() {
     }).then((res) => {
         res.json().then((json) => {
             if (!json.ok) {
-                const polls = document.querySelector(".ongoing-polls");
-                if (polls) { polls.style.display = "none"; }
-                const createPollPanel = document.querySelector("#new-poll");
-                if (createPollPanel) { createPollPanel.style.display = "none"; }
-                const rejection = document.querySelector(".rejection");
-                rejection.style.display = "block";
+                renderError();
             }
         });
+    }).catch(err => {
+        renderError();
+        const rejection = document.querySelector(".rejection");
+        rejection.innerHTML = `<h4>Uh oh - Connection refused!</h4><p>这有可能是你的问题，也可能是我的问题。先检查一下你的网络连接，然后重试一下吧。</p>`;
     });
 }
 
@@ -91,13 +104,26 @@ function getOngoingPolls() {
             }
             for (let i = 0; i < json.polls.length; i++) {
                 json.polls[i].content = JSON.parse(json.polls[i].content);
+                json.polls[i].expired = new Date(json.polls[i].expirationDate) < new Date();
             }
             window.polls = json.polls;
         });
+    }).catch(err => {
+        renderError();
+        const rejection = document.querySelector(".rejection");
+        rejection.innerHTML = `<h4>Uh oh - Connection refused!</h4><p>这有可能是你的问题，也可能是我的问题。先检查一下你的网络连接，然后重试一下吧。</p>`;
     });
 }
 
 function voteFor(pollID, voteID) {
+    let poll = null;
+    for (let j = 0; j < window.polls.length; j++) {
+        if (window.polls[j].id == pollID) {
+            poll = window.polls[j];
+            break;
+        }
+    }
+    if (!poll || new Date(poll.expirationDate) < new Date()) { return; }
     fetch("http://" + host + ":" + port + "/api/voteFor", {
         method: "post",
         mode: "cors",
@@ -111,18 +137,9 @@ function voteFor(pollID, voteID) {
             console.log(json);
         });
     });
-
-    const votes = document.querySelectorAll("[pollid='" + pollID + "'].poll-option");
+    
     let total = 0;
-
-    let poll = null;
-    for (let j = 0; j < window.polls.length; j++) {
-        if (window.polls[j].id == pollID) {
-            poll = window.polls[j];
-            break;
-        }
-    }
-    if (!poll) { return; }
+    const votes = document.querySelectorAll("[pollid='" + pollID + "'].poll-option");
     const content = poll.content;
     if (!content.multiselect) {
         for (let i = 0; i < content.votes.length; i++) {
@@ -168,22 +185,24 @@ function renderOngoingPolls() {
     console.log(polls);
     // === CONSTRUCT POLLS === //
     for (let i = 0; i < polls.length; i++) {
-        const poll = polls[i].content;
+        const content = polls[i].content;
+        const expiredWarning = polls[i].expired ? "style=\"color: #ff7603\"; font-weight: bold" : "";
+        const expired = polls[i].expired ? "expired" : "";
         let innerHTML = `
         <div class="poll" pollid="` + polls[i].id + `">
-            <h4>Q: ` + poll.title + `</h4>
-            <div><small>` + poll.description + `</small></div>
-            <div><small>发起人: ` + poll.author + `</small></div>
-            <div><small>多选; 投票截止于 ` + new Date(polls[i].expirationDate).toLocaleDateString("zh-CN") + `</small></div>
+            <h4>Q: ` + content.title + `</h4>
+            <div><small>` + content.description + `</small></div>
+            <div><small>发起人: ` + content.author + `</small></div>
+            <div><small>多选; 投票截止于 <span ` + expiredWarning + `>` + new Date(polls[i].expirationDate).toLocaleDateString("zh-CN") + `</span></small></div>
             <div class="poll-options-list">
         `;
         let total = 0;
-        for (let j = 0; j < poll.votes.length; j++) {
-            const vote = poll.votes[j];
+        for (let j = 0; j < content.votes.length; j++) {
+            const vote = content.votes[j];
             total += vote.voters.length;   
         }
-        for (let j = 0; j < poll.votes.length; j++) {
-            const vote = poll.votes[j];
+        for (let j = 0; j < content.votes.length; j++) {
+            const vote = content.votes[j];
             let percentage = Math.floor((vote.voters.length / total) * 100.0);
             if (total == 0) {
                 percentage = 0;
@@ -193,7 +212,7 @@ function renderOngoingPolls() {
                 active = "voted";
             }
             innerHTML += `
-            <div class="poll-option ` + active + `" pollid="` + polls[i].id + `" voteid="` + j + `" voters="` + vote.voters.length + `" multiselect="` + poll.multiselect + `">
+            <div class="poll-option ` + active + ` ` + expired + `" pollid="` + polls[i].id + `" voteid="` + j + `" voters="` + vote.voters.length + `" multiselect="` + content.multiselect + `">
                 <div class="poll-bar"></div>
                 ` + vote.option + ` <small>` + percentage + `%</small>
             </div>

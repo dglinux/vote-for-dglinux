@@ -166,7 +166,7 @@ label:active {
 
 .poll-option {
     background-color: #eeeeee;
-    padding: 0.1rem 0.5rem;
+    padding: 0.2rem 0.5rem;
     color: #343434;
     user-select: none;
     margin: 0.1rem 0;
@@ -189,6 +189,10 @@ label:active {
     pointer-events: none;
 }
 
+.poll-option.expired .poll-bar {
+    background-color: #ff760355;
+}
+
 .poll-option.winning:after {
     content: "👑";
     position: absolute;
@@ -205,25 +209,30 @@ label:active {
     right: 0% !important;
 }
 
-.poll-option:hover * {
+.poll-option:not(.expired):not(.voted):hover * {
     color: #111111;
 }
 
-.poll-option:active, .poll-option.voted {
+.poll-option:not(.expired):active, .poll-option.voted {
     background-color: #119911;
     color: white;
     z-index: 100;
 }
 
-.poll-option:active ::placeholder, .poll-option.voted ::placeholder {
+.poll-option.expired.voted {
+    background-color: #ee6502;
     color: white;
 }
 
-.poll-option:active *, .poll-option.voted * {
+.poll-option:not(.expired):active ::placeholder, .poll-option.voted ::placeholder {
     color: white;
 }
 
-.poll-option:active .poll-bar, .poll-option.voted .poll-bar {
+.poll-option:not(.expired):active *, .poll-option.voted * {
+    color: white;
+}
+
+.poll-option:not(.expired):active .poll-bar, .poll-option.voted .poll-bar {
     background-color: transparent !important;
 }
 
