@@ -38,6 +38,7 @@ AccessToken.init({
 // === EVERYTHING IS READY! === //
 Poll.sync();
 AccessToken.sync();
+let tokenMutex = false;
 
 function writeCORSHeader(res) {
     res.writeHead(200, {
@@ -47,28 +48,39 @@ function writeCORSHeader(res) {
     });
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function checkTokenValidity(token) {
+    while (tokenMutex) {
+        await sleep(100);
+    }
+    tokenMutex = true;
     const uuidMatcher = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidMatcher.exec(token)) {
         console.log("Invalid token: " + token);
+        tokenMutex = false;
         return false;
     }
-    await AccessToken.sync();
     let values = await AccessToken.findAll({
         where: {
-            token: token
-        }
+            token: token,
+        },
     });
     if (values.length == 0) {
         // ret.ok = false;
-        AccessToken.create({
-            token: token
+        await AccessToken.create({
+            token: token,
         });
         console.log("Inserting: " + token);
+        tokenMutex = false;
         return true;
     } else {
+        tokenMutex = false;
         return true;
     }
+    
 }
 
 app.post("/api/checkTokenValidity", async (req, res) => {
@@ -98,12 +110,12 @@ app.post("/api/submitPoll", async (req, res) => {
     const content = JSON.parse(data.content);
     const expirationDate = new Date(content.expirationDate);
     delete content.expirationDate;
-    Poll.sync().then(() => {
-        Poll.create({
-            content: JSON.stringify(content),
-            expirationDate: expirationDate
-        })
+    
+    Poll.create({
+        content: JSON.stringify(content),
+        expirationDate: expirationDate
     });
+
     res.write(JSON.stringify(ret));
     res.end();
 });
@@ -140,53 +152,51 @@ app.post("/api/voteFor", async (req, res) => {
         res.end();
         return;
     }
-    Poll.sync().then(() => {
-        Poll.findAll({
+    Poll.findAll({
+        where: {
+            id: data.pollID
+        }
+    }).then(poll => {
+        if (poll.length == 0) {
+            res.write(JSON.stringify(ret));
+            res.end();
+            return;
+        }
+        const voteID = data.voteID;
+        const uuid = data.accessToken;
+        poll = poll[0];
+        if (poll.expirationDate < new Date()) {
+            res.write(JSON.stringify(ret));
+            res.end();
+            return;
+        }
+        const content = JSON.parse(poll.content);
+        if (!content.multiselect) {
+            for (let i = 0; i < content.votes.length; i++) {
+                const index = content.votes[i].voters.indexOf(uuid);
+                if (index >= 0 && i != voteID) {
+                    content.votes[i].voters.splice(index, 1);
+                }
+            }
+        }
+        const index = content.votes[voteID].voters.indexOf(uuid);
+        if (index >= 0) {
+            content.votes[voteID].voters.splice(index, 1);
+        } else {
+            content.votes[voteID].voters.push(uuid);
+        }
+        Poll.update({
+            content: JSON.stringify(content)
+        }, {
             where: {
                 id: data.pollID
             }
-        }).then(poll => {
-            if (poll.length == 0) {
-                res.write(JSON.stringify(ret));
-                res.end();
-                return;
-            }
-            const voteID = data.voteID;
-            const uuid = data.accessToken;
-            poll = poll[0];
-            if (poll.expirationDate < new Date()) {
-                res.write(JSON.stringify(ret));
-                res.end();
-                return;
-            }
-            const content = JSON.parse(poll.content);
-            if (!content.multiselect) {
-                for (let i = 0; i < content.votes.length; i++) {
-                    const index = content.votes[i].voters.indexOf(uuid);
-                    if (index >= 0 && i != voteID) {
-                        content.votes[i].voters.splice(index, 1);
-                    }
-                }
-            }
-            const index = content.votes[voteID].voters.indexOf(uuid);
-            if (index >= 0) {
-                content.votes[voteID].voters.splice(index, 1);
-            } else {
-                content.votes[voteID].voters.push(uuid);
-            }
-            Poll.update({
-                content: JSON.stringify(content)
-            }, {
-                where: {
-                    id: data.pollID
-                }
-            }).then(() => {
-                ret.ok = true;
-                res.write(JSON.stringify(ret));
-                res.end();
-            });            
-            return;
-        })
+        }).then(() => {
+            ret.ok = true;
+            res.write(JSON.stringify(ret));
+            res.end();
+        });            
+        return;
     });
 });
 

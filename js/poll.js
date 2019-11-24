@@ -70,25 +70,24 @@ function renderError() {
     rejection.style.display = "block";
 }
 
-async function performPermissionCheck() {
-    try {
-        const res = await fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
-            method: "post",
-            mode: "cors",
-            body: JSON.stringify({
-                "accessToken": uuid
-            })
+function performPermissionCheck() {
+    fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
+        method: "post",
+        mode: "cors",
+        body: JSON.stringify({
+            "accessToken": uuid
+        })
+    }).then((res) => {
+        return res.json().then((json) => {
+            if (!json.ok) {
+                renderError();
+            }
         });
-        const json = await res.json();
-        if (!json.ok) {
-            renderError();
-        }
-    }
-    catch (err) {
+    }).catch(err => {
         renderError();
         const rejection = document.querySelector(".rejection");
         rejection.innerHTML = `<h4>Uh oh - Connection refused!</h4><p>这有可能是你的问题，也可能是我的问题。先检查一下你的网络连接，然后重试一下吧。</p>`;
-    }
+    });
 }
 
 function getOngoingPolls() {
