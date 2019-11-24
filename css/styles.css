@@ -49,6 +49,10 @@ input {
     border-bottom: 2px #ff760388 solid;
 }
 
+#creator {
+    display: none;
+}
+
 .blinky {
     animation: 1s blink;
 }

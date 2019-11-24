@@ -14,8 +14,8 @@
             <div><small>For a better tomorrow.</small></div>
         </div>
         <div class="magic-field">
-            <h4>魔法代码 <small>没事儿的话最好不要改这个</small></h4>
-            <input id="magic">
+            <h4>Magic code!</h4>
+            <input id="magic" placeholder="你要输入你的魔法代码，才能访问投票内容！">
         </div>
         <div id="new-poll">
             <h2>创建新投票</h2>
@@ -37,6 +37,17 @@
             <div class="submit" id="submit">
                 提交
             </div>
+
+            <div id="creator">
+                <h2>白名单</h2>
+                <div>
+                    <div><input class="fill-width" id="addField"></div>
+                </div>
+                <div class="submit" id="addSubmit">
+                    提交
+                </div>
+            </div>
+            
         </div>
         <div class="rejection">
             <h4>Uh oh - You were rejected!</h4>
@@ -47,7 +58,7 @@
     <script src="js/create.js"></script>
     <script>
         getVotingToken();
-        performPermissionCheck();
+        performPermissionCheck().then(performCreatorCheck);
         fillUpPollBars();
         bindEvents();
     </script>

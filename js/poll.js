@@ -1,7 +1,7 @@
 // === DEFAULT CONFIGURATIONS === //
 const host = "10.61.144.243";
 const port = 12345;
-let uuid = "";
+let accessToken = "";
 
 function fillUpPollBars() {
     let pollOptions = document.querySelectorAll(".poll-option");
@@ -35,22 +35,22 @@ function genUUID() {
 
 function getVotingToken() {
     const index = document.cookie.indexOf("vfd-token");
-    uuid = "";
+    accessToken = "";
     if (index < 0) {
-        uuid = genUUID();
-        document.cookie = "vfd-token=" + uuid;
+        accessToken = genUUID();
+        document.cookie = "vfd-token=" + accessToken;
     } else {
         const cookieGroups = document.cookie.split("; ");
         for (let i = 0; i < cookieGroups.length; i++) {
             const kv = cookieGroups[i].split("=");
             if (kv[0] == "vfd-token") {
-                uuid = kv[1];
+                accessToken = kv[1];
                 break;
             }
         }
     }
     const magicField = document.querySelector("#magic");
-    magicField.value = uuid;
+    magicField.value = accessToken;
     magicField.addEventListener("change", () => {
         if (magicField.value == "generate") {
             document.cookie = "vfd-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
@@ -58,6 +58,9 @@ function getVotingToken() {
             return;
         }
         document.cookie = "vfd-token=" + magicField.value; 
+        accessToken = magicField.value;
+        performPermissionCheck();
+        getOngoingPolls().then(renderOngoingPolls);
     });
 }
 
@@ -70,17 +73,31 @@ function renderError() {
     rejection.style.display = "block";
 }
 
+function reverseRenderError() {
+    const polls = document.querySelector(".ongoing-polls");
+    if (polls) { polls.style.display = "block"; }
+    const createPollPanel = document.querySelector("#new-poll");
+    if (createPollPanel) { createPollPanel.style.display = "block"; }
+    const rejection = document.querySelector(".rejection");
+    rejection.style.display = "none";
+}
+
 function performPermissionCheck() {
-    fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
+    return fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
-            "accessToken": uuid
+            "accessToken": accessToken
         })
     }).then((res) => {
+        reverseRenderError();
         return res.json().then((json) => {
             if (!json.ok) {
                 renderError();
+                const rejection = document.querySelector(".rejection");
+                rejection.innerHTML = `<h4>Uh oh - You were rejected!</h4><p>很抱歉，但我们并不能认出你！假如你是我们的干事之一，你可以联系 42yeah 来让他把你加上去。同时，别忘了告诉他你的魔法码！</p>`;
+            } else if (json.creator) {
+                window.isCreator = json.creator;
             }
         });
     }).catch(err => {
@@ -95,7 +112,7 @@ function getOngoingPolls() {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
-            "accessToken": uuid
+            "accessToken": accessToken
         })
     }).then((res) => {
         return res.json().then((json) => {
@@ -109,10 +126,6 @@ function getOngoingPolls() {
             }
             window.polls = json.polls;
         });
-    }).catch(err => {
-        renderError();
-        const rejection = document.querySelector(".rejection");
-        rejection.innerHTML = `<h4>Uh oh - Connection refused!</h4><p>这有可能是你的问题，也可能是我的问题。先检查一下你的网络连接，然后重试一下吧。</p>`;
     });
 }
 
@@ -129,7 +142,7 @@ function voteFor(pollID, voteID) {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
-            "accessToken": uuid,
+            "accessToken": accessToken,
             "pollID": pollID,
             "voteID": voteID
         })
@@ -144,23 +157,23 @@ function voteFor(pollID, voteID) {
     const content = poll.content;
     if (!content.multiselect) {
         for (let i = 0; i < content.votes.length; i++) {
-            const index = content.votes[i].voters.indexOf(uuid);
+            const index = content.votes[i].voters.indexOf(accessToken);
             if (index >= 0 && i != voteID) {
                 content.votes[i].voters.splice(index, 1);
             }
         }
     }
-    const index = content.votes[voteID].voters.indexOf(uuid);
+    const index = content.votes[voteID].voters.indexOf(accessToken);
     if (index >= 0) {
         content.votes[voteID].voters.splice(index, 1);
     } else {
-        content.votes[voteID].voters.push(uuid);
+        content.votes[voteID].voters.push(accessToken);
     }
     for (let i = 0; i < content.votes.length; i++) {
         const vote = content.votes[i];
         const voteElem = votes[i];
         total += vote.voters.length;
-        if (vote.voters.indexOf(uuid) >= 0) {
+        if (vote.voters.indexOf(accessToken) >= 0) {
             voteElem.classList.add("voted");
         } else {
             voteElem.classList.remove("voted"); 
@@ -209,7 +222,7 @@ function renderOngoingPolls() {
                 percentage = 0;
             }
             let active = "";
-            if (vote.voters.indexOf(uuid) >= 0) {
+            if (vote.voters.indexOf(accessToken) >= 0) {
                 active = "voted";
             }
             innerHTML += `

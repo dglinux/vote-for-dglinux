@@ -52,14 +52,32 @@ function submit() {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
-            "accessToken": uuid,
+            "accessToken": accessToken,
             "content": json
         })
     }).then((res) => {
         res.json().then((json) => {
-            console.log(json);
+            if (res.ok) {
+                window.location = "index.html";
+            }
         });
     });
+}
+
+function performCreatorCheck() {
+    if (window.isCreator) {
+        document.querySelector("#creator").style.display = "block";
+        document.querySelector("#addSubmit").addEventListener("click", () => {
+            fetch("http://" + host + ":" + port + "/api/whitelist", {
+                method: "post",
+                mode: "cors",
+                body: JSON.stringify({
+                    "accessToken": accessToken,
+                    "token": document.querySelector("#addField").value
+                })
+            });
+        });
+    }
 }
 
 function bindEvents() {
