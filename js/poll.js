@@ -191,7 +191,7 @@ function renderOngoingPolls() {
         const expired = polls[i].expired ? "expired" : "";
         let innerHTML = `
         <div class="poll" pollid="` + polls[i].id + `">
-            <h4>Q: ` + content.title + `</h4>
+            <h4 id="` + content.title + `"><a class="poll-link" href="#` + content.title + `">Q: ` + content.title + `</a></h4>
             <div><small>` + content.description + `</small></div>
             <div><small>发起人: ` + content.author + `</small></div>
             <div><small>多选; 投票截止于 <span ` + expiredWarning + `>` + new Date(polls[i].expirationDate).toLocaleDateString("zh-CN") + `</span></small></div>
@@ -234,4 +234,9 @@ function renderOngoingPolls() {
         });
     }
     fillUpPollBars();
+    if (window.location.hash != "") {
+        let elem = document.querySelector("[id='" + decodeURIComponent(window.location.hash).substr(1) + "']");
+        elem.scrollIntoView();
+        elem.parentElement.classList.add("blinky");
+    }
 }

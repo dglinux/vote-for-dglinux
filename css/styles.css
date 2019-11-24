@@ -9,6 +9,28 @@
     src: url("/fonts/avenir.bold.otf");
 }
 
+@keyframes blink {
+    from {
+        background-color: #ff760355;
+    }
+
+    25% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: #ff760355;
+    }
+
+    to {
+        background-color: 0;
+    }
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     font-family: "Avenir Next", Arial, Helvetica, sans-serif;
     margin: 0;
@@ -25,6 +47,10 @@ input {
     font-size: 1em;
     margin-bottom: 0.2em;
     border-bottom: 2px #ff760388 solid;
+}
+
+.blinky {
+    animation: 1s blink;
 }
 
 .divider {
@@ -234,6 +260,24 @@ label:active {
 
 .poll-option:not(.expired):active .poll-bar, .poll-option.voted .poll-bar {
     background-color: transparent !important;
+}
+
+.poll-link {
+    text-decoration: none;
+    color: #121212;
+    position: relative;
+}
+
+.poll-link:hover {
+    text-decoration: underline;
+}
+
+.poll-link:hover:before {
+    content: "#";
+    color: #ff760355;
+    position: absolute;
+    left: -15px;
+    top: 0;
 }
 
 .rejection {
