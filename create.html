@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vote for dglinux</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="giant-header">Vote For DGLinux</h1>
+            <div><small>For a better tomorrow.</small></div>
+        </div>
+        <div class="magic-field">
+            <h4>魔法代码 <small>没事儿的话最好不要改这个</small></h4>
+            <input id="magic">
+        </div>
+        <div class="">
+            <h2>创建新投票</h2>
+            <div>
+                <input type="checkbox" id="multiselect"> <label for="multiselect">是多选吗？</label>
+            </div>
+            <div><input class="new-poll-name" placeholder="标题" id="title"></div>
+            <div><input class="new-poll-halfsie" placeholder="作者" id="author"><input class="new-poll-halfsie" placeholder="非常简单的介绍" id="description"></div>
+
+            <h4 style="margin-top: 2rem">投票项</h4>
+            <div class="new-poll-options-list">
+                <div class="selectable poll-option">
+                    <div class="poll-bar"></div>
+                    <input class="new-poll-option" placeholder="选项一"><small style="display: none">0%</small>
+                </div>
+            </div>
+
+            <div class="submit">
+                提交
+            </div>
+        </div>
+        <div class="rejection">
+            <h4>Uh oh - You were rejected!</h4>
+            <p>很抱歉，但我们并不能认出你！假如你是我们的干事之一，你可以联系 42yeah 来让他把你加上去。同时，别忘了告诉他你的魔法码！</p>
+        </div>
+    </div>
+    <script src="js/poll.js"></script>
+    <script src="js/create.js"></script>
+</body>
+</html>

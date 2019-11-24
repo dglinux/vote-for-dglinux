@@ -1,0 +1,3 @@
+server/node_modules
+server/votes.sqlite3
+.vscode
