@@ -1,12 +1,12 @@
 @font-face {
     font-family: "Avenir Next";
-    src: url("/fonts/avenir.otf");
+    src: url("../fonts/avenir.otf");
 }
 
 @font-face {
     font-weight: bold;
     font-family: "Avenir Next";
-    src: url("/fonts/avenir.bold.otf");
+    src: url("../fonts/avenir.bold.otf");
 }
 
 @keyframes blink {
