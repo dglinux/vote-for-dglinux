@@ -7,7 +7,8 @@ const app = express();
 app.use(bodyParser.text());
 const sequelize = new Sequelize({
     dialect: "sqlite",
-    storage: "votes.sqlite3"
+    storage: "votes.sqlite3",
+    logging: false
 });
 
 sequelize.authenticate().then(() => {});
@@ -119,7 +120,9 @@ app.post("/api/polls", async (req, res) => {
         return;
     }
     ret.ok = true;
-    Poll.findAll().then((polls) => {
+    Poll.findAll({
+        order: [[ "expirationDate", "DESC" ]]
+    }).then((polls) => {
         ret.polls = polls;
         res.write(JSON.stringify(ret));
         res.end();
@@ -151,6 +154,11 @@ app.post("/api/voteFor", async (req, res) => {
             const voteID = data.voteID;
             const uuid = data.accessToken;
             poll = poll[0];
+            if (poll.expirationDate < new Date()) {
+                res.write(JSON.stringify(ret));
+                res.end();
+                return;
+            }
             const content = JSON.parse(poll.content);
             if (!content.multiselect) {
                 for (let i = 0; i < content.votes.length; i++) {
