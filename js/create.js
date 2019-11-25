@@ -65,19 +65,33 @@ function submit() {
     });
 }
 
-function performCreatorCheck() {
-    if (window.isCreator) {
-        document.querySelector("#creator").style.display = "block";
-        document.querySelector("#addSubmit").addEventListener("click", () => {
-            fetch("http://" + host + ":" + port + "/api/whitelist", {
-                method: "post",
-                mode: "cors",
-                body: JSON.stringify({
-                    "accessToken": accessToken,
-                    "token": document.querySelector("#addField").value
-                })
-            });
+function genericAdministration(url) {
+    const input = document.querySelector("#email");
+    fetch("http://" + host + ":" + port + "/api/" + url, {
+        method: "post",
+        mode: "cors",
+        body: JSON.stringify({
+            "accessToken": accessToken,
+            "email": input.value
+        })
+    }).then(res => {
+        res.json().then(json => {
+            if (json.ok) { input.value = ""; }
         });
+    });
+    if (url == "toggleRegistration") {
+        registrationAllowed = !registrationAllowed;
+        performAdminCheck();
+    }
+}
+
+function performAdminCheck() {
+    if (window.admin) {
+        const adminPanel = document.querySelector(".admin");
+        adminPanel.style.display = "block";
+        const registration = document.querySelector("#registration");
+        registration.innerHTML = window.registrationAllowed ? "关闭注册" : "开放注册";
+        
     }
 }
 

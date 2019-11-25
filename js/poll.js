@@ -1,7 +1,8 @@
 // === DEFAULT CONFIGURATIONS === //
-const host = "127.0.0.1";
+const host = "10.61.144.243";
 const port = 12345;
 let accessToken = "";
+let username = "";
 
 function fillUpPollBars() {
     let pollOptions = document.querySelectorAll(".poll-option");
@@ -22,46 +23,57 @@ function fillUpPollBars() {
         } else {
             bar.style.backgroundColor = "#" + charCode + charCode + "660355"; 
         }
-        
     }
-}
-
-function genUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
 }
 
 function getVotingToken() {
     const index = document.cookie.indexOf("vfd-token");
     accessToken = "";
-    if (index < 0) {
-        accessToken = genUUID();
-        document.cookie = "vfd-token=" + accessToken;
+    const url = new URL(window.location);
+    if (index < 0 && url.searchParams.get("code")) {
+        fetch("http://" + host + ":" + port + "/api/oauth", {
+            method: "post",
+            mode: "cors",
+            body: JSON.stringify({
+                "code": url.searchParams.get("code")
+            })
+        }).then((res) => {
+            res.json().then((json) => {
+                console.log(json);
+                if (json.ok) {
+                    document.cookie = "vfd-token=" + json.token;
+                    document.cookie = "vfd-username=" + json.username;
+                    url.searchParams.delete("code");
+                    url.searchParams.delete("state");
+                    window.location = url;
+                } else {
+                    renderError();
+                }
+            });
+        });
+        renderError();
+        const rejection = document.querySelector(".rejection");
+        rejection.innerHTML = `<h4>正在登录</h4><p>稍等……</p>`;
+        hideLoginButton();
+        return false
+    } else if (index < 0) {
+        renderError();
+        const rejection = document.querySelector(".rejection");
+        rejection.innerHTML = `<h4>你要先用 Github 登录！</h4><p>登录上 Github 后，就可以投票了！</p>`;
+        return false;
     } else {
         const cookieGroups = document.cookie.split("; ");
         for (let i = 0; i < cookieGroups.length; i++) {
             const kv = cookieGroups[i].split("=");
             if (kv[0] == "vfd-token") {
                 accessToken = kv[1];
-                break;
+            } else if (kv[0] == "vfd-username") {
+                username = kv[1];
             }
         }
+        document.querySelector(".magic-field").innerHTML = "<h3>你好，" + username + "。</h3>";
     }
-    const magicField = document.querySelector("#magic");
-    magicField.value = accessToken;
-    magicField.addEventListener("change", () => {
-        if (magicField.value == "generate") {
-            document.cookie = "vfd-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-            getVotingToken();
-            return;
-        }
-        document.cookie = "vfd-token=" + magicField.value; 
-        accessToken = magicField.value;
-        performPermissionCheck();
-        getOngoingPolls().then(renderOngoingPolls);
-    });
+    return true;
 }
 
 function renderError() {
@@ -75,7 +87,7 @@ function renderError() {
 
 function reverseRenderError() {
     const polls = document.querySelector(".ongoing-polls");
-    if (polls) { polls.style.display = "block"; }
+    if (polls) { polls.style.display = ""; }
     const createPollPanel = document.querySelector("#new-poll");
     if (createPollPanel) { createPollPanel.style.display = "block"; }
     const rejection = document.querySelector(".rejection");
@@ -95,9 +107,10 @@ function performPermissionCheck() {
             if (!json.ok) {
                 renderError();
                 const rejection = document.querySelector(".rejection");
-                rejection.innerHTML = `<h4>Uh oh - You were rejected!</h4><p>很抱歉，但我们并不能认出你！假如你是我们的干事之一，你可以联系 42yeah 来让他把你加上去。同时，别忘了告诉他你的魔法码！</p>`;
-            } else if (json.creator) {
-                window.isCreator = json.creator;
+                rejection.innerHTML = `<h4>Uh oh - You were rejected!</h4><p>很抱歉，但是你的访问被拒绝了。如果你认为这是我们的问题，你可以联系 42yeah 。</p><div class="submit" onclick="clearCredentials()">重新认证</div>`;
+            } else if (json.admin) {
+                window.admin = json.admin;
+                window.registrationAllowed = json.registrationAllowed;
             }
         });
     }).catch(err => {
@@ -199,12 +212,13 @@ function renderOngoingPolls() {
         const content = polls[i].content;
         const expiredWarning = polls[i].expired ? "style=\"color: #ff7603\"; font-weight: bold" : "";
         const expired = polls[i].expired ? "expired" : "";
+        const multiselect = content.multiselect ? "多选" : "单选";
         let innerHTML = `
         <div class="poll" pollid="` + polls[i].id + `">
             <h4 id="` + content.title + `"><a class="poll-link" href="#` + content.title + `">Q: ` + content.title + `</a></h4>
             <div><small>` + content.description + `</small></div>
             <div><small>发起人: ` + content.author + `</small></div>
-            <div><small>多选; 投票截止于 <span ` + expiredWarning + `>` + new Date(polls[i].expirationDate).toLocaleDateString("zh-CN") + `</span></small></div>
+            <div><small>` + multiselect + `; 投票截止于 <span ` + expiredWarning + `>` + new Date(polls[i].expirationDate).toLocaleDateString("zh-CN") + `</span></small></div>
             <div class="poll-options-list">
         `;
         let total = 0;
@@ -249,4 +263,14 @@ function renderOngoingPolls() {
         elem.scrollIntoView();
         elem.parentElement.classList.add("blinky");
     }
+}
+
+function hideLoginButton() {
+    document.querySelector(".magic-field").style.display = "none";
+}
+
+function clearCredentials() {
+    document.cookie = "vfd-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+    document.cookie = "vfd-username=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+    window.location.reload();
 }

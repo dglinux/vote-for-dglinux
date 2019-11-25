@@ -1,6 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const Sequelize = require("sequelize");
+const fetch = require("node-fetch");
+const FormData = require("form-data");
+const md5 = require("js-md5");
 const Model = Sequelize.Model;
 
 const app = express();
@@ -16,6 +19,7 @@ sequelize.authenticate().then(() => {});
 // === INIT DATA === //
 class Poll extends Model {}
 class AccessToken extends Model {}
+let registrationAllowed = false;
 
 Poll.init({
     content: {
@@ -32,13 +36,16 @@ AccessToken.init({
     token: {
         type: Sequelize.STRING,
         allowNull: false
+    },
+    admin: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false
     }
 }, { sequelize });
 
 // === EVERYTHING IS READY! === //
 Poll.sync();
 AccessToken.sync();
-let tokenMutex = false;
 
 function writeCORSHeader(res) {
     res.writeHead(200, {
@@ -56,37 +63,47 @@ async function checkTokenValidity(token) {
     // const accessTokenMatcher = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!token || token.length <= 0) {
         console.log("Invalid token: " + token);
-        tokenMutex = false;
         return false;
     }
-    while (tokenMutex) {
-        await sleep(100);
-    }
-    tokenMutex = true;
     let values = await AccessToken.findAll({
         where: {
             token: token,
         },
     });
-    const all = await AccessToken.findAll();
-    if (all.length == 0) {
-        await AccessToken.create({
-            token: token,
-        });
-        console.log("Inserting: " + token);
-        values.push(0);
-    }
-    tokenMutex = false;
     return values.length != 0;
 }
 
-async function isCreator(token) {
+async function insertToken(token) {
+    let values = await AccessToken.findAll({
+        where: {
+            token: token,
+        },
+    });
+    if (values.length == 0) {
+        await AccessToken.create({
+            token: token,
+            admin: false
+        });
+        console.log("Inserting: " + token);
+    }
+}
+
+async function isAdmin(token) {
     let values = await AccessToken.findAll({
         where: {
             token: token,
         },
     });
     if (values.length > 0 && values[0].id == 1) {
+        await AccessToken.update({
+            admin: true
+        }, {
+            where: {
+                id: 1
+            }
+        });
+        return true;
+    } else if (values.length > 0 && values[0].admin) {
         return true;
     }
     return false;
@@ -100,8 +117,9 @@ app.post("/api/checkTokenValidity", async (req, res) => {
     };
     if (data && data.accessToken) {
         ret.ok = await checkTokenValidity(data.accessToken);
-        if (await isCreator(data.accessToken)) {
-            ret.creator = true; // MYSTERIOUS!
+        if (await isAdmin(data.accessToken)) {
+            ret.admin = true; // MYSTERIOUS!
+            ret.registrationAllowed = registrationAllowed;
         }
     }
     res.write(JSON.stringify(ret));
@@ -159,18 +177,136 @@ app.post("/api/whitelist", async (req, res) => {
     let ret = {
         ok: false
     }; 
-    if (!data || !await checkTokenValidity(data.accessToken)) {
+    if (!data || !await checkTokenValidity(data.accessToken) || !isAdmin(data.accessToken)) {
         res.write(JSON.stringify(ret));
         res.end();
         return;
-    } 
+    }
     await AccessToken.create({
-        token: data.token,
+        token: md5(data.email),
+        admin: false
     });
-    console.log("Inserting", data.token);
+    console.log("Inserting", data.email);
     ret.ok = true;
     res.write(JSON.stringify(ret));
     res.end();
+});
+
+app.post("/api/oauth", async (req, oauthRespond) => {
+    writeCORSHeader(oauthRespond);
+    let ret = {
+        ok: false
+    };
+    const data = JSON.parse(req.body);
+    if (!data || !data.code) {
+        oauthRespond.write(JSON.stringify(ret));
+        oauthRespond.end();
+        return;
+    }
+    let formData = new FormData();
+    formData.append("client_id", "ccf78414e0b90745f8f3");
+    formData.append("client_secret", "<client_secret>");
+    formData.append("code", data.code);
+    formData.append("redirect_uri", "http://10.61.144.243:8080/index.html");
+    formData.append("state", "");
+    fetch("https://github.com/login/oauth/access_token", {
+        method: "post",
+        body: formData
+    }).then(res => {
+        res.text().then(text => {
+            text = text.split("&");
+            let githubToken;
+            for (let i = 0; i < text.length; i++) {
+                text[i] = text[i].split("=");
+                if (text[i][0] == "access_token") {
+                    githubToken = text[i][1];
+                }
+            }
+            if (text[0][0] == "error") { return; }
+            fetch("https://api.github.com/user", {
+                headers: {
+                    "Authorization": "token " + githubToken
+                }
+            }).then(res => {
+                res.json().then(async json => {
+                    const email = json.email;
+                    const token = md5(email);
+                    if (!registrationAllowed) {
+                        if (AccessToken.findAll().then(async tokens => {
+                            if (tokens.length == 0) {
+                                await insertToken(token);
+                            }
+                        }));
+                    } else {
+                        await insertToken(token);
+                    }
+                    ret.token = token;
+                    ret.ok = true;
+                    ret.username = json.login;
+                    oauthRespond.write(JSON.stringify(ret));
+                    oauthRespond.end();
+                });
+            });
+        });
+    }).catch(e => {
+        oauthRespond.write(JSON.stringify(ret));
+        oauthRespond.end();
+    });
+});
+
+app.post("/api/toggleRegistration", async (req, res) => {
+    writeCORSHeader(res);
+    const data = JSON.parse(req.body);
+    let ret = {
+        ok: false
+    }; 
+    if (!data || !await checkTokenValidity(data.accessToken) || !isAdmin(data.accessToken)) {
+        res.write(JSON.stringify(ret));
+        res.end();
+        return;
+    }
+    registrationAllowed = !registrationAllowed;
+    ret.ok = true;
+    res.write(JSON.stringify(ret));
+    res.end();
+    return;
+});
+
+app.post("/api/promote", async (req, res) => {
+    writeCORSHeader(res);
+    const data = JSON.parse(req.body);
+    let ret = {
+        ok: false
+    };
+    if (!data || !await checkTokenValidity(data.accessToken) || !isAdmin(data.accessToken)) {
+        res.write(JSON.stringify(ret));
+        res.end();
+        return;
+    }
+    const token = md5(data.email);
+    let values = await AccessToken.findAll({
+        where: {
+            token: token,
+        },
+    });
+    if (values.length == 0) {
+        res.write(JSON.stringify(ret));
+        res.end();
+        return;
+    }
+    let user = values[0];
+    // promote/demote
+    await AccessToken.update({
+        admin: !user.admin
+    }, {
+        where: {
+            id: user.id
+        }
+    });
+    ret.ok = true;
+    res.write(JSON.stringify(ret));
+    res.end();
+    return;
 });
 
 app.post("/api/voteFor", async (req, res) => {

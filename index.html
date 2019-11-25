@@ -14,8 +14,7 @@
             <div><small>For a better tomorrow.</small></div>
         </div>
         <div class="magic-field">
-            <h4>Magic code!</h4>
-            <input id="magic" placeholder="你要输入你的魔法代码，才能访问投票内容！">
+            <a class="submit" href="https://github.com/login/oauth/authorize?client_id=ccf78414e0b90745f8f3&scope=user:email&state=" id="login">Login via github</a>
         </div>
         <div class="ongoing-polls">
             <div class="failed">
@@ -27,15 +26,20 @@
             
         </div>
         <div class="rejection">
-            <h4>Uh oh - You were rejected!</h4>
-            <p>很抱歉，但我们并不能认出你！假如你是我们的干事之一，你可以联系 42yeah 来让他把你加上去。同时，别忘了告诉他你的魔法码！</p>
+            <h4>Uh oh! Error in error!</h4>
+            <p>你能看到这个的原因很可能是在尝试显示错误的时候出错了。。。假如你真的看到了，请马上开 <a href="https://github.com/dglinux/vote-for-dglinux">issue</a> 。</p>
         </div>
+
+        <div class="divider"></div>
+        <small><i>The ballot is stronger than the bullet.</i> - Abraham Lincoln.<br />This amalgamation is brought to you by <a href="https://github.com/42yeah">42yeah</a>.</small>
     </div>
     <script src="js/poll.js"></script>
     <script>
-        getVotingToken();
-        performPermissionCheck();
-        getOngoingPolls().then(renderOngoingPolls);
+        if (getVotingToken()) {
+            performPermissionCheck();
+            getOngoingPolls().then(renderOngoingPolls);
+        }
+        
     </script>
 </body>
 </html>
