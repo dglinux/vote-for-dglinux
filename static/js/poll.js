@@ -1,6 +1,6 @@
 // === DEFAULT CONFIGURATIONS === //
-const host = "10.61.144.243";
-const port = 12345;
+const host = window.location.hostname;
+const port = window.location.port;
 let accessToken = "";
 let username = "";
 
@@ -31,6 +31,7 @@ function getVotingToken() {
     accessToken = "";
     const url = new URL(window.location);
     if (index < 0 && url.searchParams.get("code")) {
+        console.log("Got code. Accessing OAUTH...");
         fetch("http://" + host + ":" + port + "/api/oauth", {
             method: "post",
             mode: "cors",
@@ -39,7 +40,6 @@ function getVotingToken() {
             })
         }).then((res) => {
             res.json().then((json) => {
-                console.log(json);
                 if (json.ok) {
                     document.cookie = "vfd-token=" + json.token;
                     document.cookie = "vfd-username=" + json.username;
@@ -48,6 +48,8 @@ function getVotingToken() {
                     window.location = url;
                 } else {
                     renderError();
+                    const rejection = document.querySelector(".rejection");
+                    rejection.innerHTML = `<h4>Github 登录错误！</h4><p>` + json.reason + `</p>`;
                 }
             });
         });

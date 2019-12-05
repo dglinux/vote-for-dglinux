@@ -1,3 +1,4 @@
-server/node_modules
-server/votes.sqlite3
+node_modules
+votes.sqlite3
 .vscode
+server-config.json

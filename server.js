@@ -1,9 +1,24 @@
+const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
 const Sequelize = require("sequelize");
 const fetch = require("node-fetch");
 const FormData = require("form-data");
 const md5 = require("js-md5");
+
+// === SERVE STATIC ===
+const serveStatic = require("serve-static");
+const staticPath = serveStatic("./static", { index: [ "index.html" ] });
+const dataPath = serveStatic("/data");
+const cssPath = serveStatic("/css");
+const jsPath = serveStatic("/js");
+
+// === SENSITIVE DATA ===
+let githubOAuth = {
+    clientID: "",
+    clientSecret: ""
+};
+
 const Model = Sequelize.Model;
 
 const app = express();
@@ -109,6 +124,10 @@ async function isAdmin(token) {
     return false;
 }
 
+app.get("*", (req, res) => {
+    staticPath(req, res, function() { res.end(); });
+});
+
 app.post("/api/checkTokenValidity", async (req, res) => {
     writeCORSHeader(res);
     const data = JSON.parse(req.body);
@@ -204,10 +223,9 @@ app.post("/api/oauth", async (req, oauthRespond) => {
         return;
     }
     let formData = new FormData();
-    formData.append("client_id", "ccf78414e0b90745f8f3");
-    formData.append("client_secret", "<client_secret>");
+    formData.append("client_id", githubOAuth.clientID);
+    formData.append("client_secret", githubOAuth.clientSecret);
     formData.append("code", data.code);
-    formData.append("redirect_uri", "http://10.61.144.243:8080/index.html");
     formData.append("state", "");
     fetch("https://github.com/login/oauth/access_token", {
         method: "post",
@@ -218,11 +236,18 @@ app.post("/api/oauth", async (req, oauthRespond) => {
             let githubToken;
             for (let i = 0; i < text.length; i++) {
                 text[i] = text[i].split("=");
+                if (text[i].length <= 1 || text[i][0] == "error") {
+                    ret.ok = false;
+                    ret.reason = text[i][1];
+                    if (ret.reason == undefined) { ret.reason = "The OAuth ClientID might be wrong."; }
+                    oauthRespond.write(JSON.stringify(ret));
+                    oauthRespond.end();
+                    return;
+                }
                 if (text[i][0] == "access_token") {
                     githubToken = text[i][1];
                 }
             }
-            if (text[0][0] == "error") { return; }
             fetch("https://api.github.com/user", {
                 headers: {
                     "Authorization": "token " + githubToken
@@ -368,4 +393,11 @@ app.post("/api/voteFor", async (req, res) => {
     });
 });
 
-app.listen(12345);
+fs.readFile("server-config.json", (err, data) => {
+    if (err) { throw err; } // This would be fatal; why tip?
+    const json = JSON.parse(data);
+    console.log("Listening on " + json.port);
+    githubOAuth.clientID = json.clientID;
+    githubOAuth.clientSecret = json.clientSecret;
+    app.listen(json.port);
+});
