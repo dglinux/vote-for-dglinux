@@ -49,7 +49,7 @@ function submit() {
         data.votes.push(voteData);
     }
     const json = JSON.stringify(data);
-    fetch("http://" + host + ":" + port + "/api/submitPoll", {
+    fetch("./api/submitPoll", {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
@@ -67,7 +67,7 @@ function submit() {
 
 function genericAdministration(url) {
     const input = document.querySelector("#email");
-    fetch("http://" + host + ":" + port + "/api/" + url, {
+    fetch("./api/" + url, {
         method: "post",
         mode: "cors",
         body: JSON.stringify({

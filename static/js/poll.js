@@ -32,7 +32,7 @@ function getVotingToken() {
     const url = new URL(window.location);
     if (index < 0 && url.searchParams.get("code")) {
         console.log("Got code. Accessing OAUTH...");
-        fetch("http://" + host + ":" + port + "/api/oauth", {
+        fetch("./api/oauth", {
             method: "post",
             mode: "cors",
             body: JSON.stringify({
@@ -97,7 +97,7 @@ function reverseRenderError() {
 }
 
 function performPermissionCheck() {
-    return fetch("http://" + host + ":" + port + "/api/checkTokenValidity", {
+    return fetch("./api/checkTokenValidity", {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
@@ -123,7 +123,7 @@ function performPermissionCheck() {
 }
 
 function getOngoingPolls() {
-    return fetch("http://" + host + ":" + port + "/api/polls", {
+    return fetch("./api/polls", {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
@@ -153,7 +153,7 @@ function voteFor(pollID, voteID) {
         }
     }
     if (!poll || new Date(poll.expirationDate) < new Date()) { return; }
-    fetch("http://" + host + ":" + port + "/api/voteFor", {
+    fetch("./api/voteFor", {
         method: "post",
         mode: "cors",
         body: JSON.stringify({

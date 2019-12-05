@@ -274,6 +274,7 @@ app.post("/api/oauth", async (req, oauthRespond) => {
             });
         });
     }).catch(e => {
+        ret.reason = e.toString();
         oauthRespond.write(JSON.stringify(ret));
         oauthRespond.end();
     });
