@@ -1,0 +1,6 @@
+.*
+Dockerfile
+docker-compose.yml
+README.md
+screenshot.png
+server-config-template.json

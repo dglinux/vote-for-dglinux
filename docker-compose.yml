@@ -1,0 +1,10 @@
+version: "3.1"
+services:
+  vote:
+    build: .
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./server-config-template.json:/usr/src/app/server-config.json:ro
+      # - {Your sqlite data file}:/usr/src/app/votes.sqlite3
+    restart: always
