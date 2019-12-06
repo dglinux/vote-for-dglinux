@@ -21,7 +21,6 @@ function optionEventListener(e) {
     if (shouldInsertNewItem) {
         window.template.addEventListener("keyup", optionEventListener);
         window.template.querySelector("input").placeholder = "选项 " + (list.childElementCount + 1);
-        console.log(window.template.getAttribute("placeholder"));
         list.appendChild(window.template);
         window.template = window.template.cloneNode(true);
     } else if (getOptionValue(elem) == "" && isLastElementOfList(elem.nextElementSibling)) {
@@ -30,7 +29,6 @@ function optionEventListener(e) {
 }
 
 function submit() {
-    console.log("SUBMITTING");
     const data = {
         title: document.querySelector("#title").value,
         author: document.querySelector("#author").value,
