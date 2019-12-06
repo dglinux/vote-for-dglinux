@@ -4,8 +4,6 @@ LABEL maintainer="AUTUMN"
 
 WORKDIR /usr/src/app
 
-RUN npm config set registry http://registry.npm.taobao.org/
-
 COPY package*.json ./
 
 RUN npm install
