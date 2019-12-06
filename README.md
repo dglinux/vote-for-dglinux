@@ -1,3 +1,5 @@
+![Screenshot](screenshot.png)
+
 ## Vote For DGLinux!
 
 This is a voting system, as a test to run DGLinux in a democratic way, for the fellow member of DGLinux. It shall mostly work. It uses Github OAuth as a mean of verification and login, so a github account might be necessary.
@@ -16,3 +18,5 @@ npm run server
 ### Word of Notice
 
 However, before `npm run server`, you should create a Github OAuth application [here](https://github.com/settings/applications/new). After the successful OAuth app creation, you can begin filling spaces in the file `server-config-template.json`, and later renaming it to `server-config.json`.
+
+Also, the OAuth Application's redirection address should point to the home page of the voting system.
