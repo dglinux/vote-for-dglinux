@@ -64,13 +64,13 @@ function submit() {
 }
 
 function genericAdministration(url) {
-    const input = document.querySelector("#email");
+    const input = document.querySelector("#identifier");
     fetch("./api/" + url, {
         method: "post",
         mode: "cors",
         body: JSON.stringify({
             "accessToken": accessToken,
-            "email": input.value
+            "identifier": input.value
         })
     }).then(res => {
         res.json().then(json => {

@@ -205,10 +205,10 @@ app.post("/api/whitelist", async (req, res) => {
         return;
     }
     await AccessToken.create({
-        token: md5(data.email),
+        token: md5(data.identifier),
         admin: false
     });
-    console.log("Inserting", data.email);
+    console.log("Inserting", data.identifier);
     ret.ok = true;
     res.write(JSON.stringify(ret));
     res.end();
@@ -312,10 +312,10 @@ app.post("/api/promote", async (req, res) => {
         res.end();
         return;
     }
-    const token = md5(data.email);
+    const identifier = md5(data.identifier);
     let values = await AccessToken.findAll({
         where: {
-            token: token,
+            identifier: identifier,
         },
     });
     if (values.length == 0) {
