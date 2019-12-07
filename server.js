@@ -9,9 +9,6 @@ const md5 = require("js-md5");
 // === SERVE STATIC ===
 const serveStatic = require("serve-static");
 const staticPath = serveStatic("./static", { index: [ "index.html" ] });
-const dataPath = serveStatic("/data");
-const cssPath = serveStatic("/css");
-const jsPath = serveStatic("/js");
 
 // === SENSITIVE DATA ===
 let githubOAuth = {
@@ -52,6 +49,10 @@ AccessToken.init({
         type: Sequelize.STRING,
         allowNull: false
     },
+    identifier: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     admin: {
         type: Sequelize.BOOLEAN,
         allowNull: false
@@ -88,7 +89,7 @@ async function checkTokenValidity(token) {
     return values.length != 0;
 }
 
-async function insertToken(token) {
+async function insertToken(token, identifier) {
     let values = await AccessToken.findAll({
         where: {
             token: token,
@@ -97,6 +98,7 @@ async function insertToken(token) {
     if (values.length == 0) {
         await AccessToken.create({
             token: token,
+            identifier: identifier,
             admin: false
         });
         console.log("Inserting: " + token);
@@ -190,6 +192,7 @@ app.post("/api/polls", async (req, res) => {
     });
 });
 
+// DEPRECATED: whitelist is not currently usable
 app.post("/api/whitelist", async (req, res) => {
     writeCORSHeader(res);
     const data = JSON.parse(req.body);
@@ -254,16 +257,16 @@ app.post("/api/oauth", async (req, oauthRespond) => {
                 }
             }).then(res => {
                 res.json().then(async json => {
-                    const email = json.email;
-                    const token = md5(email);
+                    const identifier = md5(json.login);
+                    const token = md5("" + json.id);
                     if (!registrationAllowed) {
                         if (AccessToken.findAll().then(async tokens => {
                             if (tokens.length == 0) {
-                                await insertToken(token);
+                                await insertToken(token, identifier);
                             }
                         }));
                     } else {
-                        await insertToken(token);
+                        await insertToken(token, identifier);
                     }
                     ret.token = token;
                     ret.ok = true;
