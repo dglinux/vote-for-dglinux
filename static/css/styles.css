@@ -403,6 +403,10 @@ body.dark {
     background-color: #111;
 }
 
+.giant-header.dark {
+    color: rgb(170, 40, 4);
+}
+
 .ongoing-polls.dark > .poll > h4 > .poll-link {
     color: white;
 }
