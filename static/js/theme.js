@@ -17,7 +17,7 @@ function detectTheme() {
 }
 
 function switchToBright(e) {
-    document.cookie = "theme=white";
+    document.cookie = "theme=bright";
     e.target.classList.add("domination");
     e.target.style["z-index"] = 102;
     setTimeout(() => {

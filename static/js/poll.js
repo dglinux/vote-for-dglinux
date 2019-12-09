@@ -276,3 +276,55 @@ function clearCredentials() {
     document.cookie = "vfd-username=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
     window.location.reload();
 }
+
+function updateMagicFieldButton() {
+    const magicButton = document.querySelector("#login");
+    fetch("./api/githubClientID", {
+        method: "post",
+        mode: "cors"
+    }).then((res) => {
+        res.json().then((json) => {
+            magicButton.href = "https://github.com/login/oauth/authorize?client_id=" + json.clientID + "&scope=user:email&state=";
+            magicButton.innerHTML = "Login via Github";
+        });
+    });
+}
+
+async function subscribeForUpdates() {
+    const wsURL = await fetch("./api/getWSURL", {
+        method: "post",
+        mode: "cors"
+    }).then(async (res) => {
+        const json = await res.json();
+        return json.wsURL;
+    });
+    const ws = new WebSocket(wsURL);
+    ws.onopen = (e) => {
+        ws.send(JSON.stringify({
+            accessToken: accessToken
+        }));
+    };
+
+    ws.onmessage = e => {
+        const json = JSON.parse(e.data);
+        if ("modifier" in json) {
+            const vote = document.querySelector("[pollid='" + json.pollID + "'][voteid='" + json.voteID + "']");
+            vote.setAttribute("voters", +vote.getAttribute("voters") + json.modifier);
+            // === RECALC PERCENTS === //
+            const votes = document.querySelector(".poll[pollid='" + json.pollID + "']")
+                .querySelectorAll(".poll-option");
+            let total = 0;
+            votes.forEach(elem => {
+                total += +elem.getAttribute("voters");
+            });
+            votes.forEach(elem => {
+                let percentage = Math.floor((+elem.getAttribute("voters") / total) * 100.0);
+                if (total == 0) {
+                    percentage = 0;
+                }
+                elem.querySelector("small").innerHTML = percentage + "%";
+            });
+            fillUpPollBars();
+        }
+    };
+}

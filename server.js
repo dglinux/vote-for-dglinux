@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const Sequelize = require("sequelize");
 const fetch = require("node-fetch");
 const FormData = require("form-data");
+const url = require("url");
+const ws = require("ws");
 const md5 = require("js-md5");
 
 // === SERVE STATIC ===
@@ -11,10 +13,12 @@ const serveStatic = require("serve-static");
 const staticPath = serveStatic("./static", { index: [ "index.html" ] });
 
 // === SENSITIVE DATA ===
-let githubOAuth = {
+let sensitive = {
     clientID: "",
-    clientSecret: ""
+    clientSecret: "",
+    wsURL: ""
 };
+let wsSubscribers = [];
 
 const Model = Sequelize.Model;
 
@@ -126,9 +130,27 @@ async function isAdmin(token) {
     return false;
 }
 
-app.get("*", (req, res) => {
+app.get(/^(?!\/api).*$/, (req, res) => {
     staticPath(req, res, function() { res.end(); });
 });
+
+app.post("/api/githubClientID", (req, res) => {
+    writeCORSHeader(res);
+    let ret = {
+        clientID: sensitive.clientID
+    };
+    res.write(JSON.stringify(ret));
+    res.end();
+});
+
+app.post("/api/getWSURL", (req, res) => {
+    writeCORSHeader(res);
+    let ret = {
+        wsURL: sensitive.wsURL
+    };
+    res.write(JSON.stringify(ret));
+    res.end();
+})
 
 app.post("/api/checkTokenValidity", async (req, res) => {
     writeCORSHeader(res);
@@ -226,8 +248,8 @@ app.post("/api/oauth", async (req, oauthRespond) => {
         return;
     }
     let formData = new FormData();
-    formData.append("client_id", githubOAuth.clientID);
-    formData.append("client_secret", githubOAuth.clientSecret);
+    formData.append("client_id", sensitive.clientID);
+    formData.append("client_secret", sensitive.clientSecret);
     formData.append("code", data.code);
     formData.append("state", "");
     fetch("https://github.com/login/oauth/access_token", {
@@ -372,14 +394,17 @@ app.post("/api/voteFor", async (req, res) => {
             for (let i = 0; i < content.votes.length; i++) {
                 const index = content.votes[i].voters.indexOf(accessToken);
                 if (index >= 0 && i != voteID) {
+                    broadcastChange(accessToken, data.pollID, i, -1);
                     content.votes[i].voters.splice(index, 1);
                 }
             }
         }
         const index = content.votes[voteID].voters.indexOf(accessToken);
         if (index >= 0) {
+            broadcastChange(accessToken, data.pollID, voteID, -1);
             content.votes[voteID].voters.splice(index, 1);
         } else {
+            broadcastChange(accessToken, data.pollID, voteID, 1);
             content.votes[voteID].voters.push(accessToken);
         }
         Poll.update({
@@ -397,11 +422,78 @@ app.post("/api/voteFor", async (req, res) => {
     });
 });
 
+const webSocketServer = new ws.Server({
+    noServer: true
+});
+
+async function subscribe(ws, message) {
+    let data = JSON.parse(message);
+    const ret = {
+        ok: false
+    };
+    if (!data || !await checkTokenValidity(data.accessToken)) {
+        ws.send(JSON.stringify(ret));
+        return;
+    }
+    for (let i = 0; i < wsSubscribers.length; i++) {
+        if (wsSubscribers[i].token == data.accessToken) {
+            ws.send(JSON.stringify(ret));
+            return;
+        }
+    }
+    wsSubscribers.push({
+        token: data.accessToken,
+        ws: ws
+    });
+    console.log(data.accessToken + " has started its subscription");
+    ret.ok = true;
+    ws.send(JSON.stringify(ret));
+}
+
+async function endSubscription(ws, e) {
+    for (let i = 0; i < wsSubscribers.length; i++) {
+        if (wsSubscribers[i].ws == ws) {
+            console.log(wsSubscribers[i].token + " left the subscription");
+            wsSubscribers.splice(i, 1);
+            return;
+        }
+    }
+};
+
+function broadcastChange(voter, pollID, voteID, modifier) {
+    const diff = JSON.stringify({
+        pollID: pollID,
+        voteID: voteID,
+        modifier: modifier
+    });
+    for (let i = 0; i < wsSubscribers.length; i++) {
+        const sub = wsSubscribers[i];
+        if (voter == sub.token) {
+            continue;
+        }
+        sub.ws.send(diff);
+    }
+}
+
+webSocketServer.addListener("connection", (ws) => {
+    ws.addListener("message", (e) => { subscribe(ws, e); });
+    ws.addListener("close", (e) => { endSubscription(ws, e); });
+});
+
 fs.readFile("server-config.json", (err, data) => {
     if (err) { throw err; } // This would be fatal; why tip?
     const json = JSON.parse(data);
     console.log("Listening on " + json.port);
-    githubOAuth.clientID = json.clientID;
-    githubOAuth.clientSecret = json.clientSecret;
-    app.listen(json.port);
+    sensitive.clientID = json.clientID;
+    sensitive.clientSecret = json.clientSecret;
+    sensitive.wsURL = json.wsURL;
+    const server = app.listen(json.port);
+    server.on("upgrade", (req, socket, head) => {
+        const pathName = req.url.split("/");
+        if (pathName[pathName.length - 2] == "api" && pathName[pathName.length - 1] == "ws") {
+            webSocketServer.handleUpgrade(req, socket, head, (ws) => {
+                webSocketServer.emit("connection", ws);
+            });
+        }
+    });
 });

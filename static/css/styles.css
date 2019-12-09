@@ -415,6 +415,11 @@ body.dark {
     background-color: #111;
 }
 
+input.dark {
+    background: transparent;
+    color: white;
+}
+
 .giant-header.dark {
     color: rgb(170, 40, 4);
 }
@@ -444,7 +449,6 @@ body.dark {
     color: white;
 }
 
-input.dark {
-    background: transparent;
-    color: white;
+.divider.dark {
+    background-color: #343434;
 }

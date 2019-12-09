@@ -2,5 +2,6 @@
     "port": 12345,
     "clientID": "<Github OAuth ClientID>",
     "clientSecret": "<Github OAuth ClientSecret>",
+    "wsURL": "<Server WebSocket URL>",
     "comment": "Rename this file to server-config.json and delete this comment (or not) and stuffs will work"
 }
