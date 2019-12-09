@@ -152,7 +152,7 @@ app.post("/api/submitPoll", async (req, res) => {
     const data = JSON.parse(req.body);
     let ret = {
         ok: false
-    }; 
+    };
     if (!data || !await checkTokenValidity(data.accessToken) || !data.content) {
         res.write(JSON.stringify(ret));
         res.end();
@@ -161,7 +161,7 @@ app.post("/api/submitPoll", async (req, res) => {
     const content = JSON.parse(data.content);
     const expirationDate = new Date(content.expirationDate);
     delete content.expirationDate;
-    
+
     Poll.create({
         content: JSON.stringify(content),
         expirationDate: expirationDate
@@ -176,7 +176,7 @@ app.post("/api/polls", async (req, res) => {
     const data = JSON.parse(req.body);
     let ret = {
         ok: false
-    }; 
+    };
     if (!data || !await checkTokenValidity(data.accessToken)) {
         res.write(JSON.stringify(ret));
         res.end();
@@ -288,7 +288,7 @@ app.post("/api/toggleRegistration", async (req, res) => {
     const data = JSON.parse(req.body);
     let ret = {
         ok: false
-    }; 
+    };
     if (!data || !await checkTokenValidity(data.accessToken) || !isAdmin(data.accessToken)) {
         res.write(JSON.stringify(ret));
         res.end();
@@ -392,7 +392,7 @@ app.post("/api/voteFor", async (req, res) => {
             ret.ok = true;
             res.write(JSON.stringify(ret));
             res.end();
-        });            
+        }); 
         return;
     });
 });
