@@ -4,7 +4,6 @@ function registerThemeListener() {
     circlets[1].addEventListener("mousedown", switchToDark);
 
     detectTheme();
-    window.addEventListener("load", detectTheme);
 }
 
 function detectTheme() {

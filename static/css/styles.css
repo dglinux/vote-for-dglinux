@@ -93,6 +93,13 @@ a:active {
     margin-left: 0.25em;
 }
 
+@media screen and (max-width: 438px) {
+    .circlet-list {
+        display: block;
+        margin: 0;
+    }
+}
+
 .circlet {
     display: inline-block;
     width: 1rem;
@@ -392,23 +399,23 @@ body.dark {
     background-color: #111;
 }
 
-.poll-link.dark {
+.ongoing-polls.dark > .poll > h4 > .poll-link {
     color: white;
 }
 
-.poll-link:active {
+.ongoing-polls.dark > .poll > h4 > .poll-link:active {
     color: #ff7603;
 }
 
-.poll-option.dark {
+.ongoing-polls.dark > .poll > .poll-options-list > .poll-option {
     background-color: #151515;
     color: white;
 }
 
-.poll-option.dark * {
+.ongoing-polls.dark > .poll > .poll-options-list > .poll-option * {
     color: white;
 }
 
-.poll-option.dark:not(.expired):not(.voted):hover * {
+.ongoing-polls.dark > .poll > .poll-options-list > .poll-option:not(.expired):not(.voted):hover * {
     color: white;
 }
