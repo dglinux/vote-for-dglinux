@@ -19,9 +19,9 @@ function fillUpPollBars() {
         charCode = charCode - Math.round((p * (charCode - biggest)));
         charCode = charCode.toString(16);
         if (!option.classList.contains("expired")) {
-            bar.style.backgroundColor = "#00" + charCode + charCode + "0055";
+            bar.style.backgroundColor = "#00" + charCode + charCode + "0055 !important";
         } else {
-            bar.style.backgroundColor = "#" + charCode + charCode + "660355"; 
+            bar.style.backgroundColor = "#" + charCode + charCode + "660355 !important"; 
         }
     }
 }

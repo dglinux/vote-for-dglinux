@@ -27,6 +27,32 @@
     }
 }
 
+@keyframes domination {
+    from {
+        transform: translateY(-4px) scale(1.0);
+        box-shadow: 0 0 0 6px #33333355;
+    }
+
+    10% {
+        transform: translateY(-3px) scale(1.0);
+        box-shadow: 0 0 0 3px #33333355;
+    }
+    
+    20% {
+        transform: translateY(-3px) scale(1.0);
+        box-shadow: 0 0 0 3px #33333355;
+    }
+
+    70% {
+        transform: translateY(0px) scale(200.0);
+    }
+
+    to {
+        box-shadow: 0 0 0 3px #33333355;
+        transform: translateY(0px) scale(1.0);
+    }
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -62,8 +88,55 @@ a:active {
     color: #ff7603;
 }
 
+.circlet-list {
+    display: inline;
+    margin-left: 0.25em;
+}
+
+.circlet {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 100%;
+    box-shadow: 0 0 0 3px #ff760355;
+    background-color: white;
+    margin: 0 0.2em;
+    transition: all 0.5s;
+    z-index: 101;
+    position: relative;
+}
+
+.circlet.circlet__dark {
+    background-color: #333;
+    box-shadow: 0 0 0 3px #33333355;
+}
+
+.circlet:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 0 6px;
+}
+
+.circlet.circlet__dark:hover {
+    box-shadow: 0 0 0 6px #33333355;
+}
+
+.circlet:active {
+    transition: all 0.2s;
+    transform: translateY(-4px);
+    box-shadow: 0 0 0 3px;
+    animation: 3s domination ease forwards;
+}
+
+.circlet.circlet__dark:active {
+    box-shadow: 0 0 0 3px #33333355;
+}
+
 .blinky {
     animation: 1s blink;
+}
+
+.domination {
+    animation: 3s domination ease-out forwards;
 }
 
 .divider {
@@ -265,13 +338,13 @@ label:active {
 }
 
 .poll-option:not(.expired):active, .poll-option.voted {
-    background-color: #119911;
+    background-color: #119911 !important;
     color: white;
     z-index: 100;
 }
 
 .poll-option.expired.voted {
-    background-color: #ee6502;
+    background-color: #ee6502 !important;
     color: white;
 }
 
@@ -311,4 +384,31 @@ label:active {
 
 .failed {
     display: none;
+}
+
+/* === DARK THEME === */
+body.dark {
+    color: white;
+    background-color: #111;
+}
+
+.poll-link.dark {
+    color: white;
+}
+
+.poll-link:active {
+    color: #ff7603;
+}
+
+.poll-option.dark {
+    background-color: #151515;
+    color: white;
+}
+
+.poll-option.dark * {
+    color: white;
+}
+
+.poll-option.dark:not(.expired):not(.voted):hover * {
+    color: white;
 }
