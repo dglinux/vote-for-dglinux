@@ -164,7 +164,7 @@ function voteFor(pollID, voteID) {
     }).then((res) => {
         res.json().then((json) => {});
     });
-    
+
     let total = 0;
     const votes = document.querySelectorAll("[pollid='" + pollID + "'].poll-option");
     const content = poll.content;
@@ -226,7 +226,7 @@ function renderOngoingPolls() {
         let total = 0;
         for (let j = 0; j < content.votes.length; j++) {
             const vote = content.votes[j];
-            total += vote.voters.length;   
+            total += vote.voters.length;
         }
         for (let j = 0; j < content.votes.length; j++) {
             const vote = content.votes[j];

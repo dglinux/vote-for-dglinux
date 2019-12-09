@@ -89,7 +89,7 @@ function performAdminCheck() {
         adminPanel.style.display = "block";
         const registration = document.querySelector("#registration");
         registration.innerHTML = window.registrationAllowed ? "关闭注册" : "开放注册";
-        
+
     }
 }
 
