@@ -98,6 +98,10 @@ a:active {
         display: block;
         margin: 0;
     }
+
+    .circlet:first-of-type {
+        margin: 0;
+    }
 }
 
 .circlet {
@@ -107,7 +111,7 @@ a:active {
     border-radius: 100%;
     box-shadow: 0 0 0 3px #ff760355;
     background-color: white;
-    margin: 0 0.2em;
+    margin: 0 0 0 0.4em;
     transition: all 0.5s;
     z-index: 101;
     position: relative;
