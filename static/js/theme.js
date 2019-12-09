@@ -38,11 +38,11 @@ function switchToDark(e) {
     e.target.style["z-index"] = 102;
     setTimeout(() => {
         switchToDarkWithoutAnimation();
-    }, 1300);
+    }, 750);
     setTimeout (() => {
         e.target.classList.remove("domination");
         e.target.style["z-index"] = 0;
-    }, 3000);
+    }, 2000);
 }
 
 function switchToDarkWithoutAnimation() {
